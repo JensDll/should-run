@@ -21,15 +21,15 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Fetch commits of pull request and determine changes
-        id: changes
+      - id: changes
         # This script will fetch all commits of the current pull request.
         # It will then determine what projects have changed and
         # write the result to the GitHub action's output parameter.
         run: |
           shopt -s extglob
 
-          declare -r projects=${${{ inputs.projects }}//+([ ,])/|}
+          declare -r inputs="${{ inputs.projects }}"
+          declare -r projects=${inputs//+([ ,])/|}
           declare -r pattern=".*/($projects)/.*"
 
           IFS="|"
