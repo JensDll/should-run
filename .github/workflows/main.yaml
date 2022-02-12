@@ -21,6 +21,11 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - id: changes
         # This script will fetch all commits of the current pull request.
         # It will then determine what projects have changed and
