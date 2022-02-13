@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# This script will fetch all commits of the current pull request.
-# It will then determine what projects have changed and
-# write the result to the GitHub action's output parameter.
-
 shopt -s extglob
 
 declare -r projects=${1//+([ ,])/|}
