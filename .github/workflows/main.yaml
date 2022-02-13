@@ -67,12 +67,7 @@ jobs:
           done
           unset IFS
 
-          echo "Fetching commits of pull request ..."
-
-          while ! git merge-base --is-ancestor ${{ steps.pre.outputs.base_sha }} HEAD
-          do
-            git fetch --deepen=10 origin HEAD
-          done
+          git fetch --depth=1 origin ${{ github.base_ref }}
 
           echo "Checking for changes ..."
           echo "The pattern is \"$pattern\""
