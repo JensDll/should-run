@@ -36,12 +36,12 @@ jobs:
             echo "::error ::Unsupported event name \"${{ github.event_name }}\" ... Supported values are \"push, pull_request\""
           fi
 
-      - name: Checkout the repository
+      - name: Checking out the repository
         uses: actions/checkout@v2
         with:
           ref: ${{ steps.pre.outputs.head_sha }}
 
-      - name: Fetching commits of pull request and determining changes
+      - name: Fetching commits of branch and determining changes
         id: changes
         # This script will fetch all commits of the current branch,
         # determine what projects have changed, and write the result
@@ -62,7 +62,7 @@ jobs:
 
           echo "Fetching commits of pull request ..."
 
-          while [[ -z $(git merge-base ${{ steps.pre.outputs.base_sha }} HEAD) ]]
+          while ! git merge-base --is-ancestor ${{ steps.pre.outputs.base_sha }} HEAD
           do
             git fetch --deepen=10 origin HEAD
           done
