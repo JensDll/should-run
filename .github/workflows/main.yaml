@@ -41,6 +41,13 @@ jobs:
         with:
           ref: ${{ steps.pre.outputs.head_sha }}
 
+      - name: Debug information
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+          STEPS_CONTEXT: ${{ toJSON(steps) }}
+          NEEDS_CONTEXT: ${{ toJSON(needs) }}
+        run: env
+
       - name: Fetching commits of branch and determining changes
         id: changes
         # This script will fetch all commits of the current branch,
