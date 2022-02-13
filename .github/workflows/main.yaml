@@ -67,7 +67,15 @@ jobs:
           done
           unset IFS
 
-          git fetch --depth=1 origin ${{ github.base_ref }}
+          if [[ ${{ github.event_name }} == "push" ]]
+          then
+            while ! git merge-base --is-ancestor ${{ steps.pre.outputs.base_sha }} HEAD
+            do
+              git fetch --deepen=10 origin HEAD
+            done
+          else
+            git fetch --depth=1 origin ${{ github.base_ref }}
+          fi
 
           echo "Checking for changes ..."
           echo "The pattern is \"$pattern\""
