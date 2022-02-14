@@ -7,7 +7,7 @@ on:
         description: The projects to match against
         required: true
         type: string
-      diff-filter:
+      diff_filter:
         description: Filter to use on git diff
         required: false
         type: string
@@ -32,25 +32,45 @@ jobs:
           INPUTS: ${{ toJSON(inputs) }}
         run: env
 
-      - name: Checking out the repository
+      - name: Determining head commit
+        id: determine_head
+        run: |
+          case ${{ github.event_name }} in
+            push)
+              echo "::set-output name=sha::${{ github.event.after }}"
+              ;;
+            pull_request)
+              echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}"
+              ;;
+            *)
+              echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
+              ;;
+          esac
+
+      - name: Checking out the head commit
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.after }}
+          ref: ${{ steps.determine_head.outputs.sha }}
 
-      - name: Fetching base commit to compare
-        id: base
+      - name: Determining base commit
+        id: determine_base
         run: |
-          if [[ ${{ github.event_name }} == "push" ]]
-          then
-            git fetch --depth=1 origin ${{ github.event.before }}
-            echo "::set-output name=base_sha::${{ github.event.before }}"
-          elif [[ ${{ github.event_name }} == "pull_request" ]]
-          then
-            git fetch --depth=2 origin ${{ github.event.before }}
-            echo "::set-output name=base_sha::$(git rev-parse ${{ github.event.before }}^)"
-          else
-            echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
-          fi
+          case ${{ github.event_name }} in
+            push)
+              git fetch --depth=1 origin ${{ github.event.before }}
+              echo "::set-output name=sha::${{ github.event.before }}"
+              ;;
+            pull_request)
+              if [[ -z ${{ github.event.before }} ]]
+              then
+                git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
+                echo "::set-output name=sha::${{ github.event.pull_request.base.sha }}"
+              else
+                git fetch --depth=1 origin ${{ github.event.before }}
+                echo "::set-output name=sha::${{ github.event.before }}"
+              fi
+              ;;
+          esac
 
       - name: Determining changes
         id: changes
@@ -74,9 +94,10 @@ jobs:
           while read -r line
           do
             line="/$line"
+            echo "Git diff: $line"
             if [[ $line =~ $pattern ]]
             then
-              echo "Match found in line: $line - The match was: ${BASH_REMATCH[1]}"
+              echo "Match found! The match was: ${BASH_REMATCH[1]}"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
-          done < <(git diff --name-only --diff-filter=${{ inputs.diff-filter }} ${{ steps.base.outputs.base_sha }} HEAD)
+          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ steps.determine_base.outputs.sha }} HEAD)
