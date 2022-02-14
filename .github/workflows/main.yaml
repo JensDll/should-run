@@ -5,8 +5,13 @@ on:
     inputs:
       projects:
         description: The projects to match against
-        type: string
         required: true
+        type: string
+      diff-filter:
+        description: Filter to use on git diff
+        required: false
+        type: string
+        default: dr
     outputs:
       result:
         description: JSON result - One boolean property for each input project
@@ -21,31 +26,28 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Running pre conditions
-        id: pre
-        run: |
-          if [[ ${{ github.event_name }} == "push" ]]
-          then
-            echo "::set-output name=base_sha::${{ github.event.before }}"
-            echo "::set-output name=head_sha::${{ github.event.after }}"
-          elif [[ ${{ github.event_name }} == "pull_request" ]]
-          then
-            echo "::set-output name=base_sha::${{ github.event.pull_request.base.sha }}"
-            echo "::set-output name=head_sha::${{ github.event.pull_request.head.sha }}"
-          else
-            echo "::error ::Unsupported event name \"${{ github.event_name }}\" ... Supported values are \"push, pull_request\""
-          fi
-
       - name: Checking out the repository
         uses: actions/checkout@v2
         with:
-          ref: ${{ steps.pre.outputs.head_sha }}
+          ref: ${{ github.event.after }}
 
-      - name: Fetching commits of branch and determining changes
+      - name: Fetching base commit to compare
+        id: base
+        run: |
+          if [[ ${{ github.event_name }} == "push" ]]
+          then
+            git fetch --depth=1 origin ${{ github.event.before }}
+            echo "::set-output name=base_sha::${{ github.event.before }}"
+          elif [[ ${{ github.event_name }} == "pull_request" ]]
+          then
+            git fetch --depth=2 origin ${{ github.event.before }}
+            echo "::set-output name=base_sha::$(git rev-parse ${{ github.event.before }}^)"
+          else
+            echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
+          fi
+
+      - name: Determining changes
         id: changes
-        # This script will fetch all commits of the current branch,
-        # determine what projects have changed, and write the result
-        # to the GitHub action's output parameter.
         run: |
           shopt -s extglob
 
@@ -60,22 +62,14 @@ jobs:
           done
           unset IFS
 
-          echo "Fetching commits of pull request ..."
-
-          while ! git merge-base --is-ancestor ${{ steps.pre.outputs.base_sha }} HEAD
-          do
-            git fetch --deepen=10 origin HEAD
-          done
-
-          echo "Checking for changes ..."
-          echo "The pattern is \"$pattern\""
+          echo "The pattern is: $pattern"
 
           while read -r line
           do
             line="/$line"
             if [[ $line =~ $pattern ]]
             then
-              echo "Match found in \"$line\" ... The match was \"${BASH_REMATCH[1]}\""
+              echo "Match found in line: $line - The match was: ${BASH_REMATCH[1]}"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
-          done < <(git diff --name-only ${{ steps.pre.outputs.base_sha }} HEAD)
+          done < <(git diff --name-only --diff-filter=${{ inputs.diff-filter }} ${{ steps.base.outputs.base_sha }} HEAD)
