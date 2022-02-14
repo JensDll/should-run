@@ -1,6 +1,6 @@
 # Reuseable should run workflow
 
-Only run jobs in projects that have changed.
+Only run jobs in projects that have changed. Useful for monorepo workflows. See [`./.github/workflows/main.yaml`](./.github/workflows/main.yaml) for the implementation.
 
 ## Usage
 
