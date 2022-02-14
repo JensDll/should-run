@@ -26,6 +26,12 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Debug information
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+          INPUTS: ${{ toJSON(inputs) }}
+        run: env
+
       - name: Checking out the repository
         uses: actions/checkout@v2
         with:
