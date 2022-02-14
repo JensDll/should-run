@@ -6,5 +6,12 @@
     "**/CVS": true,
     "**/.DS_Store": true,
     "**/Thumbs.db": true
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true
+    }
   }
 }
