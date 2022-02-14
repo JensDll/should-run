@@ -5,8 +5,13 @@ on:
     inputs:
       projects:
         description: The projects to match against
-        type: string
         required: true
+        type: string
+      diff-filter:
+        description: Filter to use on git diff
+        required: false
+        type: string
+        default: dr
     outputs:
       result:
         description: JSON result - One boolean property for each input project
@@ -26,13 +31,6 @@ jobs:
         with:
           ref: ${{ github.event.after }}
 
-      - name: Debug information
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-          STEPS_CONTEXT: ${{ toJSON(steps) }}
-          NEEDS_CONTEXT: ${{ toJSON(needs) }}
-        run: env
-
       - name: Fetching base commit to compare
         id: base
         run: |
@@ -45,14 +43,11 @@ jobs:
             git fetch --depth=2 origin ${{ github.event.before }}
             echo "::set-output name=base_sha::$(git rev-parse ${{ github.event.before }}^)"
           else
-            echo "::error ::Unsupported event name \"${{ github.event_name }}\" ... Supported values are \"push, pull_request\""
+            echo "::error ::Unsupported event name < ${{ github.event_name }} > ... Supported values are < push, pull_request >"
           fi
 
       - name: Determining changes
         id: changes
-        # This script will fetch all commits of the current branch,
-        # determine what projects have changed, and write the result
-        # to the GitHub action's output parameter.
         run: |
           shopt -s extglob
 
@@ -67,15 +62,14 @@ jobs:
           done
           unset IFS
 
-          echo "Checking for changes ..."
-          echo "The pattern is \"$pattern\""
+          echo "The pattern is < $pattern >"
 
           while read -r line
           do
             line="/$line"
             if [[ $line =~ $pattern ]]
             then
-              echo "Match found in \"$line\" ... The match was \"${BASH_REMATCH[1]}\""
+              echo "Match found in < $line > ... The match was < ${BASH_REMATCH[1]} >"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
-          done < <(git diff --name-only --diff-filter=dr ${{ steps.base.outputs.base_sha }} HEAD)
+          done < <(git diff --name-only --diff-filter=${{ inputs.diff-filter }} ${{ steps.base.outputs.base_sha }} HEAD)
