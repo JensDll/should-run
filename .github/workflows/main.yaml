@@ -38,6 +38,7 @@ jobs:
         run: |
           if [[ ${{ github.event_name }} == "push" ]]
           then
+            git fetch --depth=1 origin ${{ github.event.before }}
             echo "::set-output name=base_sha::${{ github.event.before }}"
           elif [[ ${{ github.event_name }} == "pull_request" ]]
           then
