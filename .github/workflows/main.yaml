@@ -55,12 +55,13 @@ jobs:
           declare -r projects=${inputs//+([ ,])/|}
           declare -r pattern=".*/($projects)/.*"
 
+          declare -r old_IFS=$IFS
           IFS="|"
           for project in $projects
           do
             echo "::set-output name=$project::false"
           done
-          unset IFS
+          IFS=$old_IFS
 
           echo "The pattern is: $pattern"
 
