@@ -35,7 +35,7 @@ jobs:
       - name: Determining head commit
         id: determine_head
         run: |
-          case ${{ github.event_name }} in
+          case "${{ github.event_name }}" in
             push)
               echo "::set-output name=sha::${{ github.event.after }}"
               ;;
@@ -55,13 +55,13 @@ jobs:
       - name: Determining base commit
         id: determine_base
         run: |
-          case ${{ github.event_name }} in
+          case "${{ github.event_name }}" in
             push)
               git fetch --depth=1 origin ${{ github.event.before }}
               echo "::set-output name=sha::${{ github.event.before }}"
               ;;
             pull_request)
-              if [[ -z ${{ github.event.before }} ]]
+              if [[ -z "${{ github.event.before }}" ]]
               then
                 git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
                 echo "::set-output name=sha::${{ github.event.pull_request.base.sha }}"
