@@ -43,7 +43,7 @@ jobs:
             git fetch --depth=2 origin ${{ github.event.before }}
             echo "::set-output name=base_sha::$(git rev-parse ${{ github.event.before }}^)"
           else
-            echo "::error ::Unsupported event name <${{ github.event_name }}> ... Supported values are <push, pull_request>"
+            echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
           fi
 
       - name: Determining changes
@@ -62,14 +62,14 @@ jobs:
           done
           unset IFS
 
-          echo "The pattern is <$pattern>"
+          echo "The pattern is: $pattern"
 
           while read -r line
           do
             line="/$line"
             if [[ $line =~ $pattern ]]
             then
-              echo "Match found in <$line> ... The match was <${BASH_REMATCH[1]}>"
+              echo "Match found in line: $line - The match was: ${BASH_REMATCH[1]}"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
           done < <(git diff --name-only --diff-filter=${{ inputs.diff-filter }} ${{ steps.base.outputs.base_sha }} HEAD)
