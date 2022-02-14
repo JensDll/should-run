@@ -29,7 +29,7 @@ jobs:
       - name: Debug information
         env:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
-          INPUTS: ${{ toJSON(inputs) }}
+          INPUTS_CONTEXT: ${{ toJSON(inputs) }}
         run: env
 
       - name: Determining head commit
@@ -57,7 +57,7 @@ jobs:
         run: |
           case "${{ github.event_name }}" in
           push)
-            git fetch --depth=1 origin ${{ github.event.before }}
+            git fetch --no-tags --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
             echo "::set-output name=sha::${{ github.event.before }}"
             ;;
           pull_request)
@@ -65,10 +65,10 @@ jobs:
             then
               # If a pull request is newly opened no before and after context is available.
               # We can fetch the base manually by using the number of commits.
-              git fetch --deepen=${{ github.event.pull_request.commits }} origin HEAD
+              git fetch --no-tags --no-recurse-submodules --deepen=${{ github.event.pull_request.commits }} origin HEAD
               echo "::set-output name=sha::$(git rev-parse shallow)"
             else
-              git fetch --depth=1 origin ${{ github.event.before }}
+              git fetch --no-tags --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
               echo "::set-output name=sha::${{ github.event.before }}"
             fi
             ;;
