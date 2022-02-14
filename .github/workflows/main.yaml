@@ -36,15 +36,15 @@ jobs:
         id: determine_head
         run: |
           case "${{ github.event_name }}" in
-            push)
-              echo "::set-output name=sha::${{ github.event.after }}"
-              ;;
-            pull_request)
-              echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}"
-              ;;
-            *)
-              echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
-              ;;
+          push)
+            echo "::set-output name=sha::${{ github.event.after }}"
+            ;;
+          pull_request)
+            echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}"
+            ;;
+          *)
+            echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
+            ;;
           esac
 
       - name: Checking out the head commit
@@ -56,20 +56,20 @@ jobs:
         id: determine_base
         run: |
           case "${{ github.event_name }}" in
-            push)
+          push)
+            git fetch --depth=1 origin ${{ github.event.before }}
+            echo "::set-output name=sha::${{ github.event.before }}"
+            ;;
+          pull_request)
+            if [[ -z "${{ github.event.before }}" ]]
+            then
+              git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
+              echo "::set-output name=sha::${{ github.event.pull_request.base.sha }}"
+            else
               git fetch --depth=1 origin ${{ github.event.before }}
               echo "::set-output name=sha::${{ github.event.before }}"
-              ;;
-            pull_request)
-              if [[ -z "${{ github.event.before }}" ]]
-              then
-                git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
-                echo "::set-output name=sha::${{ github.event.pull_request.base.sha }}"
-              else
-                git fetch --depth=1 origin ${{ github.event.before }}
-                echo "::set-output name=sha::${{ github.event.before }}"
-              fi
-              ;;
+            fi
+            ;;
           esac
 
       - name: Determining changes
