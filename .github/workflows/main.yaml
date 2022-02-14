@@ -63,8 +63,8 @@ jobs:
           pull_request)
             if [[ -z "${{ github.event.before }}" ]]
             then
-              git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
-              echo "::set-output name=sha::${{ github.event.pull_request.base.sha }}"
+              git fetch --deepen=${{ github.event.commits }} origin HEAD
+              echo "::set-output name=sha::$(git rev-parse shallow)"
             else
               git fetch --depth=1 origin ${{ github.event.before }}
               echo "::set-output name=sha::${{ github.event.before }}"
