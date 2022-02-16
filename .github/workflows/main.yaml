@@ -11,7 +11,7 @@ on:
         description: Filter to use on git diff
         required: false
         type: string
-        default: dr
+        default: d
     outputs:
       result:
         description: JSON result - One boolean property for each input project

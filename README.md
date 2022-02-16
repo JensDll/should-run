@@ -14,8 +14,8 @@ jobs:
       projects: web api db
       # Filter to use on git diff.
       # Required: false
-      # Default: dr
-      diff-filter: dr
+      # Default: d
+      diff-filter: d
 
   web:
     if: fromJSON(needs.should-run.outputs.result).web == 'true'
