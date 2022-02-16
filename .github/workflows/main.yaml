@@ -61,16 +61,8 @@ jobs:
             echo "::set-output name=sha::${{ github.event.before }}"
             ;;
           pull_request)
-            if [[ -z "${{ github.event.before }}" ]]
-            then
-              # If a pull request is newly opened no before and after context is available.
-              # We can fetch the base manually by using the number of commits.
-              git fetch --no-tags --no-recurse-submodules --deepen=${{ github.event.pull_request.commits }} origin HEAD
-              echo "::set-output name=sha::$(git rev-parse shallow)"
-            else
-              git fetch --no-tags --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
-              echo "::set-output name=sha::${{ github.event.before }}"
-            fi
+            git fetch --no-tags --no-recurse-submodules --deepen=${{ github.event.pull_request.commits }} origin HEAD
+            echo "::set-output name=sha::$(git rev-parse shallow)"
             ;;
           esac
 
