@@ -26,12 +26,6 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Debug information
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-          INPUTS_CONTEXT: ${{ toJSON(inputs) }}
-        run: env
-
       - name: Determining head commit
         id: determine_head
         run: |
