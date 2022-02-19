@@ -36,7 +36,7 @@ jobs:
             ;;
           pull_request)
             echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}"
-            echo "::set-output name=fetch_depth::${{ $((github.event.pull_request.commits + 1)) }}"
+            echo "::set-output name=fetch_depth::$((${{ github.event.pull_request.commits }} + 1))"
             ;;
           *)
             echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
