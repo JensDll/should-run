@@ -32,9 +32,11 @@ jobs:
           case "${{ github.event_name }}" in
           push)
             echo "::set-output name=sha::${{ github.event.after }}"
+            echo "::set-output name=fetch_depth::1"
             ;;
           pull_request)
             echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}"
+            echo "::set-output name=fetch_depth::${{ $((github.event.pull_request.commits + 1)) }}"
             ;;
           *)
             echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
@@ -45,6 +47,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: ${{ steps.determine_head.outputs.sha }}
+          fetch-depth: ${{ steps.determine_head.outputs.fetch_depth }}
 
       - name: Determining base commit
         id: determine_base
@@ -55,7 +58,6 @@ jobs:
             echo "::set-output name=sha::${{ github.event.before }}"
             ;;
           pull_request)
-            git fetch --no-tags --no-recurse-submodules --deepen=${{ github.event.pull_request.commits }} origin HEAD
             echo "::set-output name=sha::$(git rev-parse shallow)"
             ;;
           esac
