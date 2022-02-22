@@ -7,7 +7,7 @@ on:
         description: The projects to match against
         required: true
         type: string
-      diff-filter:
+      diff_filter:
         description: Filter to use on git diff
         required: false
         type: string
@@ -90,4 +90,4 @@ jobs:
               echo "Match found! The match was: ${BASH_REMATCH[1]}"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
-          done < <(git diff --name-only --diff-filter=${{ inputs.diff-filter }} ${{ steps.determine_base.outputs.sha }} HEAD)
+          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ steps.determine_base.outputs.sha }} HEAD)
