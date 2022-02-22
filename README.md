@@ -15,7 +15,7 @@ jobs:
       # Filter to use on git diff.
       # Required: false
       # Default: d
-      diff-filter: d
+      diff_filter: d
 
   web:
     if: fromJSON(needs.should-run.outputs.result).web == 'true'
