@@ -26,6 +26,11 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Debug information
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: env
+
       - name: Fetching base and head commit
         id: base
         run: |
