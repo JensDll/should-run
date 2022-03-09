@@ -26,39 +26,31 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Determining head commit
-        id: determine_head
+      - name: Debug information
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: env
+
+      - name: Fetching base and head commit
+        id: base
         run: |
+          git init
+          git remote add origin ${{ github.event.repository.git_url }}
+
           case "${{ github.event_name }}" in
           push)
-            echo "::set-output name=sha::${{ github.event.after }}"
-            echo "::set-output name=fetch_depth::1"
-            ;;
-          pull_request)
-            echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}"
-            echo "::set-output name=fetch_depth::$((${{ github.event.pull_request.commits }} + 1))"
-            ;;
-          *)
-            echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
-            ;;
-          esac
-
-      - name: Checking out the head commit
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ steps.determine_head.outputs.sha }}
-          fetch-depth: ${{ steps.determine_head.outputs.fetch_depth }}
-
-      - name: Determining base commit
-        id: determine_base
-        run: |
-          case "${{ github.event_name }}" in
-          push)
-            git fetch --no-tags --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
+            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
+            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin ${{ github.event.after }}
+            git checkout --progress --force ${{ github.event.after }}
             echo "::set-output name=sha::${{ github.event.before }}"
             ;;
           pull_request)
-            echo "::set-output name=sha::$(git rev-parse shallow)"
+            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
+            git checkout --progress --force ${{ github.event.pull_request.head.sha }}
+            echo "::set-output name=sha::$(git rev-parse HEAD~${{ github.event.pull_request.commits }})"
+            ;;
+          *)
+            echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
             ;;
           esac
 
@@ -90,4 +82,4 @@ jobs:
               echo "Match found! The match was: ${BASH_REMATCH[1]}"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
-          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ steps.determine_base.outputs.sha }} HEAD)
+          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ steps.base.outputs.sha }} HEAD)
