@@ -37,20 +37,17 @@ jobs:
           git init
           git remote add origin ${{ github.event.repository.git_url }}
 
-          declare -i fetch_depth=1
-
           case "${{ github.event_name }}" in
           push)
-            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=$fetch_depth origin ${{ github.event.before }}
-            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=$fetch_depth origin ${{ github.event.after }}
+            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
+            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin ${{ github.event.after }}
             git checkout --progress --force ${{ github.event.after }}
             echo "::set-output name=sha::${{ github.event.before }}"
             ;;
           pull_request)
-            fetch_depth=$((${{ github.event.pull_request.commits }} + 1))
-            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=$fetch_depth origin ${{ github.event.pull_request.head.sha }}
+            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
             git checkout --progress --force ${{ github.event.pull_request.head.sha }}
-            echo "::set-output name=sha::$(git rev-parse HEAD~$((fetch_depth - 2)))"
+            echo "::set-output name=sha::$(git rev-parse HEAD~${{ github.event.pull_request.commits }}"
             ;;
           *)
             echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
