@@ -35,7 +35,7 @@ jobs:
         id: base
         run: |
           git init
-          git remote add origin ${{ github.event.repository.url }}
+          git remote add origin ${{ github.event.repository.git_url }}
 
           declare -i fetch_depth=1
 
