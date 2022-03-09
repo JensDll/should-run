@@ -47,7 +47,7 @@ jobs:
           pull_request)
             git fetch --no-tags --prune --progress --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
             git checkout --progress --force ${{ github.event.pull_request.head.sha }}
-            echo "::set-output name=sha::$(git rev-parse HEAD~${{ github.event.pull_request.commits }}"
+            echo "::set-output name=sha::$(git rev-parse HEAD~${{ github.event.pull_request.commits }})"
             ;;
           *)
             echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
