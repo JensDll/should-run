@@ -67,7 +67,7 @@ jobs:
 
           declare -r inputs="${{ inputs.projects }}"
           declare -r projects=${inputs//+([ ,])/|}
-          declare -r pattern="($projects)/.*"
+          declare -r pattern="^($projects)/.*"
 
           declare -r old_IFS=$IFS
           IFS="|"
