@@ -9,32 +9,32 @@ jobs:
   should-run:
     uses: JensDll/should-run/.github/workflows/main.yaml@main
     with:
-      # A list of projects to match against.
+      # A list of projects to match against as full paths.
       # Required: true
-      projects: web api db
+      projects: services/web services/api services/db
       # Filter to use on git diff.
       # Required: false
       # Default: d
       diff_filter: d
 
   web:
-    if: fromJSON(needs.should-run.outputs.result).web == 'true'
+    if: fromJSON(needs.should-run.outputs.result)['services/web'] == 'true'
     runs-on: ubuntu-latest
     needs: should-run
     steps:
-      - name: Some step
+      - run: echo "Hello web"
 
   api:
-    if: fromJSON(needs.should-run.outputs.result).api == 'true'
+    if: fromJSON(needs.should-run.outputs.result)['services/api'] == 'true'
     runs-on: ubuntu-latest
     needs: should-run
     steps:
-      - name: Some step
+      - run: echo "Hello api"
 
   db:
-    if: fromJSON(needs.should-run.outputs.result).db == 'true'
+    if: fromJSON(needs.should-run.outputs.result)['services/db'] == 'true'
     runs-on: ubuntu-latest
     needs: should-run
     steps:
-      - name: Some step
+      - run: echo "Hello db"
 ```
