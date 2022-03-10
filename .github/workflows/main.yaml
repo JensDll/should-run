@@ -26,28 +26,34 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Debug information
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: env
-
       - name: Fetching base and head commit
-        id: base
+        id: prepare
         run: |
           git init
           git remote add origin ${{ github.event.repository.git_url }}
 
           case "${{ github.event_name }}" in
           push)
-            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
-            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin ${{ github.event.after }}
-            git checkout --progress --force ${{ github.event.after }}
-            echo "::set-output name=sha::${{ github.event.before }}"
+            git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }}
+            git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.after }}
+
+            echo "::set-output name=base::${{ github.event.before }}"
+            echo "::set-output name=head::${{ github.event.after }}"
             ;;
           pull_request)
-            git fetch --no-tags --prune --progress --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
+            git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
+            git fetch --no-tags --prune --no-recurse-submodules --depth=10 origin ${{ github.event.pull_request.base.sha }}
             git checkout --progress --force ${{ github.event.pull_request.head.sha }}
-            echo "::set-output name=sha::$(git rev-list --no-merges HEAD | sed -n ${{ github.event.pull_request.commits }}p)"
+
+            while [[ -n $(git rev-list shallow ^${{ github.event.pull_request.base.sha }}) ]]
+            do
+              git fetch --no-tags --prune --no-recurse-submodules --deepen=10 origin ${{ github.event.pull_request.base.sha }}
+            done
+
+            base=$(git rev-list ${{ github.event.pull_request.head.sha }} ^${{ github.event.pull_request.base.sha }} | tail --lines 1 | xargs -I {} git rev-parse {}~1)
+
+            echo "::set-output name=base::$base"
+            echo "::set-output name=head::${{ github.event.pull_request.head.sha }}"
             ;;
           *)
             echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
@@ -75,11 +81,10 @@ jobs:
 
           while read -r line
           do
-            line="/$line"
             echo "Git diff: $line"
             if [[ $line =~ $pattern ]]
             then
               echo "Match found! The match was: ${BASH_REMATCH[1]}"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
-          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ steps.base.outputs.sha }} HEAD)
+          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ steps.prepare.outputs.base }} ${{ steps.prepare.outputs.head }})
