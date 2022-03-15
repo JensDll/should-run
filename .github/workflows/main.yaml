@@ -30,7 +30,7 @@ jobs:
         id: prepare
         run: |
           git init
-          git remote add origin ${{ github.event.repository.git_url }}
+          git remote add origin ${{ github.event.repository.url }}
 
           case "${{ github.event_name }}" in
           push)
