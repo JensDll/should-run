@@ -32,8 +32,7 @@ jobs:
           git remote add origin ${{ github.event.repository.html_url }}
 
       - name: Fetching base and head commit (pull_request)
-        if: github.event_name == 'pull_request'
-        id: prepare
+        if: github.event_name == pull_request
         run: |
           git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
           git fetch --no-tags --prune --no-recurse-submodules --depth=10 origin ${{ github.event.pull_request.base.sha }}
@@ -46,14 +45,13 @@ jobs:
 
           base=$(git rev-list ${{ github.event.pull_request.head.sha }} ^${{ github.event.pull_request.base.sha }} | tail --lines 1 | xargs -I {} git rev-parse {}~1)
 
-          echo "::set-output name=base::$base"
-          echo "::set-output name=head::${{ github.event.pull_request.head.sha }}"
+          echo "BASE=$base" >> $GITHUB_ENV
+          echo "HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
 
       - name: Fetching base and head commit (push)
-        if: github.event_name == 'push'
-        id: prepare
+        if: github.event_name == push
         env:
-          COMMITS: ${{ github.event.commits }}
+          COMMITS: ${{ toJSON(github.event.commits) }}
         run: |
           if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
           then
@@ -61,14 +59,14 @@ jobs:
 
             git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin $before ${{ github.event.after }}
 
-            echo "::set-output name=base::$(git rev-parse $before~1)"
+            echo "BASE=$(git rev-parse $before~1)" >> $GITHUB_ENV
           else
             git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
 
-            echo "::set-output name=base::${{ github.event.before }}"
+            echo "BASE=${{ github.event.before }}" >> $GITHUB_ENV
           fi
 
-          echo "::set-output name=head::${{ github.event.after }}"
+          echo "HEAD=${{ github.event.after }}" >> $GITHUB_ENV
 
       - name: Determining changes
         id: changes
@@ -97,4 +95,4 @@ jobs:
               echo "Match found! The match was: ${BASH_REMATCH[1]}"
               echo "::set-output name=${BASH_REMATCH[1]}::true"
             fi
-          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ steps.prepare.outputs.base }} ${{ steps.prepare.outputs.head }})
+          done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ env.BASE }} ${{ env.HEAD }})
