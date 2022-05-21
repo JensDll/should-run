@@ -14,7 +14,7 @@ jobs:
       projects: services/web services/api services/db
       # Filter to use on git diff.
       # Required: false
-      # Default: d
+      # Default: ''
       diff_filter: d
 
   web:

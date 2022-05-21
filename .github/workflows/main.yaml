@@ -11,10 +11,10 @@ on:
         description: Filter to use on git diff
         required: false
         type: string
-        default: d
+        default: ''
     outputs:
       result:
-        description: JSON result - One boolean property for each input project
+        description: JSON result. One boolean property for each input project
         value: ${{ jobs.main.outputs.result }}
 
 jobs:
