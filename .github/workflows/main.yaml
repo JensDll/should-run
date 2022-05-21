@@ -29,7 +29,7 @@ jobs:
       - name: Fetching base and head commit
         id: prepare
         run: |
-          git init
+          git init --initial-branch=main
           git remote add origin ${{ github.event.repository.html_url }}
 
           case "${{ github.event_name }}" in
