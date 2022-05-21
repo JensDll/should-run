@@ -26,6 +26,12 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Debug information
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+          STEPS_CONTEXT: ${{ toJSON(steps) }}
+          NEEDS_CONTEXT: ${{ toJSON(needs) }}
+        run: env
       - name: Fetching base and head commit
         id: prepare
         run: |
@@ -34,9 +40,18 @@ jobs:
 
           case "${{ github.event_name }}" in
           push)
-            git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
+            ${{ github.event.commits }} | jq .
 
-            echo "::set-output name=base::${{ github.event.before }}"
+            if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
+            then
+              git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin ${{ github.event.after }}
+              echo "::set-output name=base::$(git rev-parse ${{ github.event.after }}~1)"
+              exit 1
+            else
+              git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
+              echo "::set-output name=base::${{ github.event.before }}"
+            fi
+
             echo "::set-output name=head::${{ github.event.after }}"
             ;;
           pull_request)
