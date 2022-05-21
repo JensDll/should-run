@@ -32,7 +32,7 @@ jobs:
           git remote add origin ${{ github.event.repository.html_url }}
 
       - name: Fetching base and head commit (pull_request)
-        if: github.event_name == pull_request
+        if: github.event_name == 'pull_request'
         run: |
           git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
           git fetch --no-tags --prune --no-recurse-submodules --depth=10 origin ${{ github.event.pull_request.base.sha }}
@@ -49,7 +49,7 @@ jobs:
           echo "HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
 
       - name: Fetching base and head commit (push)
-        if: github.event_name == push
+        if: github.event_name == 'push'
         env:
           COMMITS: ${{ toJSON(github.event.commits) }}
         run: |
