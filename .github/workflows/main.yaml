@@ -31,6 +31,26 @@ jobs:
           git init --initial-branch=main
           git remote add origin ${{ github.event.repository.html_url }}
 
+      - name: Fetching base and head commit (push)
+        if: github.event_name == 'push'
+        env:
+          PUSHED_COMMITS: ${{ toJSON(github.event.commits) }}
+        run: |
+          if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
+          then
+            before=$(echo "$PUSHED_COMMITS" | jq .[0].id --raw-output)
+
+            git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin $before ${{ github.event.after }}
+
+            echo "BASE=$(git rev-parse $before~1)" >> $GITHUB_ENV
+          else
+            git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
+
+            echo "BASE=${{ github.event.before }}" >> $GITHUB_ENV
+          fi
+
+          echo "HEAD=${{ github.event.after }}" >> $GITHUB_ENV
+
       - name: Fetching base and head commit (pull_request)
         if: github.event_name == 'pull_request'
         run: |
@@ -47,26 +67,6 @@ jobs:
 
           echo "BASE=$base" >> $GITHUB_ENV
           echo "HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
-
-      - name: Fetching base and head commit (push)
-        if: github.event_name == 'push'
-        env:
-          COMMITS: ${{ toJSON(github.event.commits) }}
-        run: |
-          if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
-          then
-            before=$(echo "$COMMITS" | jq .[0].id --raw-output)
-
-            git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin $before ${{ github.event.after }}
-
-            echo "BASE=$(git rev-parse $before~1)" >> $GITHUB_ENV
-          else
-            git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
-
-            echo "BASE=${{ github.event.before }}" >> $GITHUB_ENV
-          fi
-
-          echo "HEAD=${{ github.event.after }}" >> $GITHUB_ENV
 
       - name: Determining changes
         id: changes
