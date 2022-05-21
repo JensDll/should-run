@@ -55,7 +55,7 @@ jobs:
         run: |
           if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
           then
-            before=$(echo "$COMMITS" | jq .[0].id)
+            before=$(echo "$COMMITS" | jq .[0].id --raw-output)
 
             git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin $before ${{ github.event.after }}
 
