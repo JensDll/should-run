@@ -26,53 +26,49 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Debug information
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-          STEPS_CONTEXT: ${{ toJSON(steps) }}
-          NEEDS_CONTEXT: ${{ toJSON(needs) }}
-        run: env
-      - name: Fetching base and head commit
-        id: prepare
+      - name: Initializing git repository
         run: |
           git init --initial-branch=main
           git remote add origin ${{ github.event.repository.html_url }}
 
-          case "${{ github.event_name }}" in
-          push)
-            ${{ github.event.commits }} | jq .
+      - name: Fetching base and head commit (pull_request)
+        if: github.event_name == 'pull_request'
+        id: prepare
+        run: |
+          git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
+          git fetch --no-tags --prune --no-recurse-submodules --depth=10 origin ${{ github.event.pull_request.base.sha }}
+          git checkout --progress --force ${{ github.event.pull_request.head.sha }}
 
-            if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
-            then
-              git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin ${{ github.event.after }}
-              echo "::set-output name=base::$(git rev-parse ${{ github.event.after }}~1)"
-              exit 1
-            else
-              git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
-              echo "::set-output name=base::${{ github.event.before }}"
-            fi
+          while [[ -n $(git rev-list shallow ^${{ github.event.pull_request.base.sha }}) ]]
+          do
+            git fetch --no-tags --prune --no-recurse-submodules --deepen=10 origin ${{ github.event.pull_request.base.sha }}
+          done
 
-            echo "::set-output name=head::${{ github.event.after }}"
-            ;;
-          pull_request)
-            git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
-            git fetch --no-tags --prune --no-recurse-submodules --depth=10 origin ${{ github.event.pull_request.base.sha }}
-            git checkout --progress --force ${{ github.event.pull_request.head.sha }}
+          base=$(git rev-list ${{ github.event.pull_request.head.sha }} ^${{ github.event.pull_request.base.sha }} | tail --lines 1 | xargs -I {} git rev-parse {}~1)
 
-            while [[ -n $(git rev-list shallow ^${{ github.event.pull_request.base.sha }}) ]]
-            do
-              git fetch --no-tags --prune --no-recurse-submodules --deepen=10 origin ${{ github.event.pull_request.base.sha }}
-            done
+          echo "::set-output name=base::$base"
+          echo "::set-output name=head::${{ github.event.pull_request.head.sha }}"
 
-            base=$(git rev-list ${{ github.event.pull_request.head.sha }} ^${{ github.event.pull_request.base.sha }} | tail --lines 1 | xargs -I {} git rev-parse {}~1)
+      - name: Fetching base and head commit (push)
+        if: github.event_name == 'push'
+        id: prepare
+        env:
+          COMMITS: ${{ github.event.commits }}
+        run: |
+          if [[ ${{ github.event.before }} == 0000000000000000000000000000000000000000 ]]
+          then
+            before=$(echo $COMMITS | jq .[0].id)
 
-            echo "::set-output name=base::$base"
-            echo "::set-output name=head::${{ github.event.pull_request.head.sha }}"
-            ;;
-          *)
-            echo "::error ::Unsupported event name \"${{ github.event_name }}\" - Supported values are \"push, pull_request\""
-            ;;
-          esac
+            git fetch --no-tags --prune --no-recurse-submodules --depth=2 origin $before ${{ github.event.after }}
+
+            echo "::set-output name=base::$(git rev-parse $before~1)"
+          else
+            git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ${{ github.event.before }} ${{ github.event.after }}
+
+            echo "::set-output name=base::${{ github.event.before }}"
+          fi
+
+          echo "::set-output name=head::${{ github.event.after }}"
 
       - name: Determining changes
         id: changes
