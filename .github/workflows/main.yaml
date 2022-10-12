@@ -81,7 +81,7 @@ jobs:
           IFS="|"
           for project in $projects
           do
-            echo "::set-output name=$project::false"
+            echo "$project=false" >> $GITHUB_OUTPUT
           done
           IFS=$old_IFS
 
@@ -93,6 +93,6 @@ jobs:
             if [[ $line =~ $pattern ]]
             then
               echo "Match found! The match was: ${BASH_REMATCH[1]}"
-              echo "::set-output name=${BASH_REMATCH[1]}::true"
+              echo "${BASH_REMATCH[1]}=true" >> $GITHUB_OUTPUT
             fi
           done < <(git diff --name-only --diff-filter=${{ inputs.diff_filter }} ${{ env.BASE }} ${{ env.HEAD }})
